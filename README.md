@@ -7,6 +7,9 @@ the same serial command scheme.
 
 Currently supports retrieving status and writing to any relay on the device.
 
+** Supports Python versions between 2.7.x and 3.4 **
+(Due to use of the `enum34` library)
+
 Example Use:
 
 ```
