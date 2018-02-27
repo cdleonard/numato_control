@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='numatocontroller',
+    name='numatocontrol',
     version='1.0.0',
     description='Wrapper for Numato USB Control Boards',
     author='Angaza',
