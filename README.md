@@ -1,4 +1,5 @@
 # numato_control
+
 Python control library for Numato relay hardware.
 
 Originally built as a basic monitor and control tool for the
@@ -7,7 +8,7 @@ the same serial command scheme.
 
 Currently supports retrieving status and writing to any relay on the device.
 
-** Supports Python versions between 2.7.x and 3.4 **
+**Supports Python versions between 2.7.x and 3.4**
 (Due to use of the `enum34` library)
 
 Example Use:
@@ -15,7 +16,7 @@ Example Use:
 ```
 
 # Defaults to port /dev/ttyACM0
-from numato import numato_controller
+from numato.numato_controller import numato_controller
 
 device = numato_controller()
 
