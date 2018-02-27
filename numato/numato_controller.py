@@ -144,17 +144,3 @@ class numato_controller(object):
             return RelayState.RELAY_ON
         else:
             return RelayState.RELAY_ERROR
-
-    def relay_0_state(self):
-        """ Return relay state as a `RelayState` enum.
-        :return: relay state (`RELAY_OFF` or `RELAY_ON`)
-        :rtype: :class: `RelayState`
-        """
-        return self.read_relay_state(0)
-
-    def relay_1_state(self):
-        """ Return relay state as a `RelayState` enum.
-        :return: relay state (`RELAY_OFF` or `RELAY_ON`)
-        :rtype: :class: `RelayState`
-        """
-        return self.read_relay_state(1)
