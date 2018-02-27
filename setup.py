@@ -1,6 +1,6 @@
 from distutils.core import setup
 setup(
-        name='Numato Controller',
+        name='numatocontroller',
         version='1.0.0',
         description='Wrapper for Numato USB Control Boards',
         author='Angaza',
