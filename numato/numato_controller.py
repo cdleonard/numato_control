@@ -86,8 +86,8 @@ class numato_controller(object):
     def write_relay_state(self, relay_index, new_state):
         """ Write new relay state (on or off).
 
-        :param relay_index: Integer value of relay (0 or 1) to write
-        :type relay_index: :class:`int`
+        :param relay_index: Single-character value of relay (0, 1, A, etc)
+        :type relay_index: :class:`string`
         :param new_state: Desired new state of relay
         :type new_state: :class:`RelayState`
         :return: None
