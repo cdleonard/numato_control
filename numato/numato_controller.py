@@ -43,6 +43,23 @@ class RelayState(enum.Enum):
         return text
 
 
+@enum.unique
+class GPIOState(enum.Enum):
+    GPIO_LOW = (0, 'clear')
+    GPIO_HIGH = (1, 'set')
+    GPIO_ERROR = (2, 'error')
+
+    @property
+    def numeric(self):
+        (numeric, _) = self.value
+        return numeric
+
+    @property
+    def text(self):
+        (_, text) = self.value
+        return text
+
+
 class numato_controller(object):
 
     def __init__(self, port='/dev/ttyACM0'):
@@ -72,12 +89,13 @@ class numato_controller(object):
         """
         self.relay_serial.reset_output_buffer()
         self.relay_serial.reset_input_buffer()
-        self.relay_serial.read(1000)
+        self.relay_serial.write("\r".encode())
+        self.relay_serial.read_until(terminator=">")
 
     def get_board_version(self):
         self.clear_and_reset_serial_port()
         self.relay_serial.write("\rver\r".encode())
-        response = self.relay_serial.read(100)
+        response = self.relay_serial.read_until(terminator=">")
 
         # Parse the on/off string from the response
         parsed = response[5:].partition('\n\r')[0]
@@ -89,11 +107,27 @@ class numato_controller(object):
         :param relay_index: Single-character value of relay (0, 1, A, etc)
         :type relay_index: :class:`string`
         :param new_state: Desired new state of relay
-        :type new_state: :class:`RelayState`
+        :type new_state: :class:`RelayState`, boolean, int or a string containing "ON / OFF" or "TRUE / FALSE"
         :return: None
         """
         if len(str(relay_index)) != 1:
             raise ValueError("Index {} not supported.".format(relay_index))
+
+        if isinstance(new_state, str):
+            new_state = new_state.upper()
+            if new_state in ["ON", "TRUE"]:
+                new_state = RelayState.RELAY_ON
+            else:
+                new_state = RelayState.RELAY_OFF
+
+        if isinstance(new_state, float):
+            new_state = int(new_state)
+
+        if isinstance(new_state, int):
+            if new_state:
+                new_state = RelayState.RELAY_ON
+            else:
+                new_state = RelayState.RELAY_OFF
 
         if not isinstance(new_state, RelayState):
             raise ValueError("Unknown new relay state.")
@@ -134,13 +168,99 @@ class numato_controller(object):
         self.clear_and_reset_serial_port()
         self.relay_serial.write(
             "\rrelay read {}\r".format(relay_index).encode())
-        response = self.relay_serial.read(100)
+        response = self.relay_serial.read_until(terminator=">")
 
-        # Parse the on/off string from the response
-        parsed = response[17:].partition('\n\r')[0]
-        if parsed == 'off':
+        if b"off" in response:
             return RelayState.RELAY_OFF
-        elif parsed == 'on':
+        elif b"on" in response:
             return RelayState.RELAY_ON
         else:
             return RelayState.RELAY_ERROR
+
+    def write_gpio_state(self, gpio_index, new_state):
+        """ Write new relay state (on or off).
+
+        :param gpio_index: Single-character value of gpio (0, 1, A, etc)
+        :type gpio_index: :class:`string`
+        :param new_state: Desired new state of gpio pin
+        :type new_state: :class:`RelayState`, boolean, int or a string containing "ON / OFF" or "TRUE / FALSE"
+        :return: None
+        """
+        if len(str(gpio_index)) != 1:
+            raise ValueError("Index {} not supported.".format(gpio_index))
+
+        if isinstance(new_state, str):
+            new_state = new_state.upper()
+            if new_state in ["ON", "TRUE"]:
+                new_state = GPIOState.GPIO_HIGH
+            else:
+                new_state = GPIOState.GPIO_LOW
+
+        if isinstance(new_state, float):
+            new_state = int(new_state)
+
+        if isinstance(new_state, int):
+            if new_state:
+                new_state = GPIOState.GPIO_HIGH
+            else:
+                new_state = GPIOState.GPIO_LOW
+
+        if not isinstance(new_state, GPIOState):
+            raise ValueError("Unknown new gpio state.")
+
+        self.clear_and_reset_serial_port()
+        self.relay_serial.write(
+            "\rgpio {} {}\r".format(new_state.text, gpio_index).encode())
+
+    def get_gpio_state(self, gpio_index):
+        """ Read and return the state of the relay (on or off)
+
+        :param gpio_index: Single-character index of gpio (0, 1, A, etc)
+        :type gpio_index: :class:`string`
+        :return: relay state
+        :rtype: :class:`GPIOState`
+        """
+        if len(str(gpio_index)) != 1:
+            raise ValueError("Index {} not supported.".format(gpio_index))
+
+        self.clear_and_reset_serial_port()
+        self.relay_serial.write(
+            "\rgpio read {}\r".format(gpio_index).encode())
+        response = self.relay_serial.read_until(terminator=">")
+
+        # Trying to handle both combinations of \n\r and \r\n in case different products aren't consistent
+        if b"\r0\n" in response or b"\n0\r" in response:
+            return GPIOState.GPIO_LOW
+        elif b"\r1\n" in response or b"\n1\r" in response:
+            return GPIOState.GPIO_HIGH
+        else:
+            return GPIOState.GPIO_ERROR
+
+    def read_adc(self, gpio_index):
+        """ Read and return the state of the relay (on or off)
+
+        :param gpio_index: Single-character index of gpio (0, 1, A, etc)
+        :type gpio_index: :class:`string`
+        :return: relay state
+        :rtype: :class:`GPIOState`
+        """
+        if len(str(gpio_index)) != 1:
+            raise ValueError("Index {} not supported.".format(gpio_index))
+
+        self.clear_and_reset_serial_port()
+        self.relay_serial.write(
+            "\radc read {}\r".format(gpio_index).encode())
+        response = self.relay_serial.read_until(terminator=">")
+
+        try:
+            response.decode('utf-8')
+            response = response.split(sep=b"\n")
+            return int(response[-2])
+        except:
+            return -1
+
+    def __exit__(self, type, value, traceback):
+        self.relay_serial.close()
+
+    def __enter__(self):
+        return self
