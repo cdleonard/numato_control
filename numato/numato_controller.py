@@ -95,7 +95,7 @@ class numato_controller(object):
     def get_board_version(self):
         self.clear_and_reset_serial_port()
         self.relay_serial.write("\rver\r".encode())
-        response = self.relay_serial.read_until(terminator=">")
+        response = self.relay_serial.read_until(terminator=b">")
 
         # Parse the on/off string from the response
         parsed = response[5:].partition('\n\r')[0]
@@ -134,7 +134,7 @@ class numato_controller(object):
 
         self.clear_and_reset_serial_port()
         self.relay_serial.write(
-            "\rrelay {} {}\r".format(new_state.text, relay_index).encode())
+            "relay {} {}\r".format(new_state.text, relay_index).encode())
 
     def turn_on_relay(self, relay_index):
         """ Convenience function to turn on a relay index.
@@ -167,8 +167,8 @@ class numato_controller(object):
 
         self.clear_and_reset_serial_port()
         self.relay_serial.write(
-            "\rrelay read {}\r".format(relay_index).encode())
-        response = self.relay_serial.read_until(terminator=">")
+            "relay read {}\r".format(relay_index).encode())
+        response = self.relay_serial.read_until(terminator=b">")
 
         if b"off" in response:
             return RelayState.RELAY_OFF
@@ -210,7 +210,7 @@ class numato_controller(object):
 
         self.clear_and_reset_serial_port()
         self.relay_serial.write(
-            "\rgpio {} {}\r".format(new_state.text, gpio_index).encode())
+            "gpio {} {}\r".format(new_state.text, gpio_index).encode())
 
     def get_gpio_state(self, gpio_index):
         """ Read and return the state of the relay (on or off)
@@ -225,8 +225,8 @@ class numato_controller(object):
 
         self.clear_and_reset_serial_port()
         self.relay_serial.write(
-            "\rgpio read {}\r".format(gpio_index).encode())
-        response = self.relay_serial.read_until(terminator=">")
+            "gpio read {}\r".format(gpio_index).encode())
+        response = self.relay_serial.read_until(terminator=b">")
 
         # Trying to handle both combinations of \n\r and \r\n in case different products aren't consistent
         if b"\r0\n" in response or b"\n0\r" in response:
@@ -249,14 +249,15 @@ class numato_controller(object):
 
         self.clear_and_reset_serial_port()
         self.relay_serial.write(
-            "\radc read {}\r".format(gpio_index).encode())
-        response = self.relay_serial.read_until(terminator=">")
+            "adc read {}\r".format(gpio_index).encode())
+        response = self.relay_serial.read_until(terminator=b">")
 
         try:
             response.decode('utf-8')
-            response = response.split(sep=b"\n")
+            response = response.split(b"\n")
             return int(response[-2])
-        except:
+        except Exception as e:
+            print(e)
             return -1
 
     def __exit__(self, type, value, traceback):
