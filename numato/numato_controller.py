@@ -191,7 +191,7 @@ class numato_controller(object):
 
         if isinstance(new_state, str):
             new_state = new_state.upper()
-            if new_state in ["ON", "TRUE"]:
+            if new_state in ["ON", "TRUE", "HIGH"]:
                 new_state = GPIOState.GPIO_HIGH
             else:
                 new_state = GPIOState.GPIO_LOW
