@@ -90,7 +90,7 @@ class numato_controller(object):
         self.relay_serial.reset_output_buffer()
         self.relay_serial.reset_input_buffer()
         self.relay_serial.write("\r".encode())
-        self.relay_serial.read_until(terminator=">")
+        self.relay_serial.read_until(terminator=b">")
 
     def get_board_version(self):
         self.clear_and_reset_serial_port()
