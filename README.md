@@ -11,6 +11,8 @@ Currently supports retrieving status and writing to any relay on the device.
 **Supports Python versions between 2.7.x and 3.4**
 (Due to use of the `enum34` library)
 
+Later versions of Python should work with the built in enums.
+
 Example Use:
 
 ```
@@ -24,9 +26,20 @@ device.get_relay_state(0)  # Retrieve state of relay index 0
 <RelayState.RELAY_OFF: (0, 'off')>
 
 device.turn_on_relay(0)  # Turn on relay index 0
+device.write_relay_state(relay_index=1, new_state=0)  # Turning off relay index 1
 
 device.get_relay_state(0)
 <RelayState.RELAY_ON: (1, 'on')>
+
+device.write_gpio_state(gpio_index=0, new_state=1) # Setting (high) GPIO index 0
+device.write_gpio_state(gpio_index=1, new_state=0) # Clearing (low) GPIO index 1
+
+device.get_gpio_state(gpio_index=1)
+<GPIOState.GPIO_LOW: (0, 'clear')>
+
+device.read_adc(gpio_index=0)
+1023
+
 ```
 
 To execute the tests, from the repository root, use `nosetests`:
