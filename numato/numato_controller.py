@@ -22,6 +22,7 @@ Future development opportunities include:
 import serial
 import logging
 import enum
+import telnetlib
 
 logger = logging.getLogger(__name__)
 
@@ -62,26 +63,45 @@ class GPIOState(enum.Enum):
 
 class numato_controller(object):
 
-    def __init__(self, port='/dev/ttyACM0'):
-        try:
-            if port != 'loop://':
-                self.relay_serial = serial.Serial(
-                    port=port,
-                    baudrate=9600,
-                    bytesize=serial.EIGHTBITS,
-                    parity=serial.PARITY_NONE,
-                    stopbits=serial.STOPBITS_ONE,
-                    timeout=0.1,
-                    xonxoff=False,
-                    rtscts=False,
-                    dsrdtr=False)
-            else:
-                # loopback port, for testing.
-                self.relay_serial = serial.serial_for_url(
-                    'loop://',
-                    timeout=0.1)
-        except:
-            raise ValueError("Serial port {} is already in use".format(port))
+    def __init__(self, port='/dev/ttyACM0', address=None, method='serial'):
+        self.method = method
+        
+        if method == 'serial':
+            try:
+                if port != 'loop://':
+                    self.relay_serial = serial.Serial(
+                        port=port,
+                        baudrate=9600,
+                        bytesize=serial.EIGHTBITS,
+                        parity=serial.PARITY_NONE,
+                        stopbits=serial.STOPBITS_ONE,
+                        timeout=0.1,
+                        xonxoff=False,
+                        rtscts=False,
+                        dsrdtr=False)
+                else:
+                    # loopback port, for testing.
+                    self.relay_serial = serial.serial_for_url(
+                        'loop://',
+                        timeout=0.1)
+            except:
+                raise ValueError("Serial port {} is already in use".format(port))
+        elif method == 'telnet':
+            self.relay_telnet = telnetlib.Telnet(address)
+
+            user = "admin"
+            password = "admin"
+            self.relay_telnet.read_until(b"login")
+            self.relay_telnet.write(user.encode('ascii') + b"\r\n")
+
+            # Wait for password prompt and enter password when prompted by device
+            self.relay_telnet.read_until(b"Password: ")
+            self.relay_telnet.write(password.encode('ascii') + b"\r\n")
+
+            # Wait for device response
+            log_result = self.relay_telnet.read_until(b"successfully\r\n")
+            #print(log_result)
+            self.relay_telnet.read_until(b">")
 
     def clear_and_reset_serial_port(self):
         """Clear UART before resuming activity.
@@ -93,9 +113,17 @@ class numato_controller(object):
         self.relay_serial.read_until(terminator=b">")
 
     def get_board_version(self):
-        self.clear_and_reset_serial_port()
-        self.relay_serial.write("\rver\r".encode())
-        response = self.relay_serial.read_until(terminator=b">")
+
+        if self.method == 'serial':
+            self.clear_and_reset_serial_port()
+            write = "\rver\r".encode()
+            self.relay_serial.write(write)
+            response = self.relay_serial.read_until(terminator=b">")
+        elif self.method == 'telnet':
+            write = "ver\r\n".encode()
+            self.relay_telnet.write(write)
+            response = self.relay_telnet.read_until(b">", timeout=1)
+            response = response.decode()
 
         # Parse the on/off string from the response
         parsed = response[5:].partition('\n\r')[0]
@@ -132,9 +160,14 @@ class numato_controller(object):
         if not isinstance(new_state, RelayState):
             raise ValueError("Unknown new relay state.")
 
-        self.clear_and_reset_serial_port()
-        self.relay_serial.write(
-            "relay {} {}\r".format(new_state.text, relay_index).encode())
+        if self.method == 'serial':
+            self.clear_and_reset_serial_port()
+            self.relay_serial.write(
+                "relay {} {}\r".format(new_state.text, relay_index).encode())
+        elif self.method == 'telnet':
+            write = "relay {} {}\r\n".format(new_state.text, relay_index).encode()
+            self.relay_telnet.write(write)
+            response = self.relay_telnet.read_until(match=b">", timeout=1)
 
     def turn_on_relay(self, relay_index):
         """ Convenience function to turn on a relay index.
@@ -165,10 +198,17 @@ class numato_controller(object):
         if len(str(relay_index)) != 1:
             raise ValueError("Index {} not supported.".format(relay_index))
 
-        self.clear_and_reset_serial_port()
-        self.relay_serial.write(
-            "relay read {}\r".format(relay_index).encode())
-        response = self.relay_serial.read_until(terminator=b">")
+        if self.method == 'serial':
+            self.clear_and_reset_serial_port()
+            self.relay_serial.write(
+                "relay read {}\r".format(relay_index).encode())
+            response = self.relay_serial.read_until(terminator=b">")
+        elif self.method == 'telnet':
+            write = "relay read {}\r\n".format(relay_index).encode()
+            self.relay_telnet.write(write)
+            response = self.relay_telnet.read_until(b">", timeout=1)
+            response.decode()
+            #print(response)
 
         if b"off" in response:
             return RelayState.RELAY_OFF
