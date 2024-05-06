@@ -116,7 +116,7 @@ class numato_controller(object):
 
         if self.method == 'serial':
             self.clear_and_reset_serial_port()
-            write = "\rver\r".encode()
+            write = "ver\r".encode()
             self.relay_serial.write(write)
             response = self.relay_serial.read_until(terminator=b">")
         elif self.method == 'telnet':
