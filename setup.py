@@ -7,5 +7,9 @@ setup(
     author='Angaza',
     author_email='devices@angaza.com',
     url='http://github.com/angaza/numato_control',
-    packages=['numato']
-    )
+    packages=['numato'],
+    install_requires=[
+        "pyserial>=3.0.1,<3.5",
+        "enum34==1.1.6",
+    ]
+)
