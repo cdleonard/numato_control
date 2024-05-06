@@ -42,15 +42,19 @@ device.read_adc(gpio_index=0)
 
 ```
 
-To execute the tests, from the repository root, use `nosetests`:
+## Testing
+
+To execute the tests, from the repository root, use `python -m unittest`:
 
 ```
 
-~$ nosetests test/test_numato_controller.py
+~$ python -m unittest
 .......
 ----------------------------------------------------------------------
 Ran 7 tests in 0.805s
 
-OK
-
 ```
+
+It is also possible to use other tools such as
+[pytest](https://docs.pytest.org/en/latest/) and
+[nose2](https://docs.nose2.io/en/latest/)
