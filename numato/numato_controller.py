@@ -123,7 +123,8 @@ class numato_controller(object):
             write = "ver\r\n".encode()
             self.relay_telnet.write(write)
             response = self.relay_telnet.read_until(b">", timeout=1)
-            response = response.decode()
+
+        response = response.decode()
 
         # Parse the on/off string from the response
         parsed = response[5:].partition('\n\r')[0]
