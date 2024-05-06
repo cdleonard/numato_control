@@ -1,4 +1,5 @@
 from unittest import TestCase
+from unittest import mock
 from numato import numato_controller as module
 
 
@@ -41,3 +42,12 @@ class TestModule(TestCase):
         device = module.numato_controller(port='loop://')
         with self.assertRaises(ValueError):
             device.get_relay_state(56)
+
+    def test_version_mock(self):
+        device = module.numato_controller(port='loop://')
+        with mock.patch.object(device, "relay_serial") as mock_serial:
+            mock_serial.read_until.return_value = b"ver\n\r00000042\n\r>"
+            with mock.patch.object(device, "clear_and_reset_serial_port") as mock_reset:
+                ver = device.get_board_version()
+                self.assertEqual(ver, '00000042')
+                self.assertEqual(mock_reset.call_count, 1)
