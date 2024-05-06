@@ -145,7 +145,7 @@ class numato_controller(object):
             new_state = new_state.upper()
             if new_state in ["ON", "TRUE"]:
                 new_state = RelayState.RELAY_ON
-            else:
+            elif new_state in ["OFF", "FALSE"]:
                 new_state = RelayState.RELAY_OFF
 
         if isinstance(new_state, float):
